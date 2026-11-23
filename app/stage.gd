@@ -4,8 +4,8 @@
 class_name Stage
 extends Node3D
 
-const SKY_TOP := Color("1b2f4a")
-const HORIZON := Color("e0936a")  # dusk; the fog uses it too, so the floor melts into the sky
+const SKY_TOP := Color("e36d36")
+const HORIZON := Color("a32f24")  # dusk; the fog uses it too, so the floor melts into the sky
 const EARTH := Color("3a2f2a")  # warm dark ground beyond the board
 
 var rng := RandomNumberGenerator.new()  # seeded, so the stage looks the same every load
