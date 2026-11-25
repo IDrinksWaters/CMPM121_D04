@@ -16,13 +16,17 @@ var session := Session.new(GRID)
 var meshes := {}  # kit piece name -> Mesh, shared by everything that shows it (Flyweight)
 var segments: Array[MeshInstance3D] = []
 var camera := Camera3D.new()
+var food_node := MeshInstance3D.new()
+var score_label := Label.new()
 var _clock := 0.0
 
 
 func _ready() -> void:
 	meshes = Stage.load_kit()
 	_build_stage()
+	_build_hud()
 	_draw_dragon()
+	_draw_food()
 
 
 ## Input arrives as events, so even a tap shorter than one frame is never missed.
@@ -38,6 +42,7 @@ func _process(delta: float) -> void:
 		_clock -= TICK_SECONDS
 		session.tick()
 		_draw_dragon()
+		_draw_food()
 	_follow(delta)
 
 
@@ -45,6 +50,8 @@ func _process(delta: float) -> void:
 func _build_stage() -> void:
 	add_child(Stage.new(session.board.tiles, meshes))
 	add_child(camera)
+	food_node.mesh = meshes["food"]
+	add_child(food_node)
 	camera.position = _center(session.dragon.body[0]) + CAMERA_OFFSET
 
 
@@ -53,6 +60,21 @@ func _follow(delta: float) -> void:
 	var target := _center(session.dragon.body[0]) + CAMERA_OFFSET
 	camera.position = camera.position.lerp(target, 1 - exp(-3 * delta))
 	camera.look_at(camera.position - CAMERA_OFFSET)
+
+
+## The score sits in a corner of the screen, on a layer above the 3D world.
+func _build_hud() -> void:
+	var layer := CanvasLayer.new()
+	score_label.position = Vector2(16, 12)
+	score_label.add_theme_font_size_override("font_size", 32)
+	layer.add_child(score_label)
+	add_child(layer)
+
+
+func _draw_food() -> void:
+	food_node.visible = session.food != Session.NO_FOOD
+	food_node.position = _center(session.food)
+	score_label.text = "Glowberries eaten: %d" % session.score
 
 
 func _draw_dragon() -> void:
