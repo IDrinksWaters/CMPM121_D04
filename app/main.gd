@@ -5,7 +5,7 @@ extends Node3D
 const GRID := Vector2i(48, 48)  # your call: bigger grids make the dragon feel finer
 const TICK_SECONDS := 0.1
 const FONT_PATH := "res://assets/PressStart2P-Regular.ttf"  # pixel font, SIL OFL
-const WAVE := "[wave amp=50.0 freq=4.0 connected=2]%s[/wave]"  # every word in the game waves
+const WAVE := "[wave amp=40.0 freq=4.0 connected=2]%s[/wave]"  # every word in the game waves
 const CAMERA_OFFSET := Vector3(0, 11, 7.5)  # above and behind the head
 const DIRECTIONS := {
 	"ui_up": Vector2i.UP,
@@ -126,8 +126,15 @@ func _draw_status() -> void:
 		Session.State.WAITING:
 			message = "[center]%s[/center]" % (WAVE % "Press an arrow key to start")
 		Session.State.DORMANT:
-			var lines := "Dormant\nThe dragon sleeps to save its energy.\nGlowberries eaten: %d\nPress Enter to wake up"
-			message = "[center]%s[/center]" % (WAVE % (lines % session.score))
+			var lines := PackedStringArray(
+				[
+					"Dormant",
+					"The dragon sleeps to save its energy.",
+					"Glowberries eaten: %d" % session.score,
+					"Press Enter to wake up",
+				]
+			)
+			message = "[center]%s[/center]" % (WAVE % "\n".join(lines))
 	_set_text(message_label, message)
 
 
