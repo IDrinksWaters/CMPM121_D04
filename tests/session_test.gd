@@ -3,6 +3,7 @@ extends "res://tests/test_case.gd"
 
 func test_a_tick_moves_the_dragon_head() -> void:
 	var session := Session.new(Vector2i(10, 10))
+	session.begin()
 	session.tick()
 	assert_eq(session.dragon.body[0], Vector2i(6, 5))
 
