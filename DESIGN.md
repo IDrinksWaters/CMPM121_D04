@@ -77,6 +77,7 @@ dragon longer, and its own body becomes the obstacle.
 
 | Claim                                               | Source (link)                                                                   | How we checked it |
 | --------------------------------------------------- | ------------------------------------------------------------------------------- | ----------------- |
+| The pale cyan Ice Fin color survives the Blender export. | [Blender 5.2 glTF exporter - Base Color](https://docs.blender.org/manual/en/5.2/addons/scene_gltf2.html#base-color) | Rebuilt the GLB and compared its linear base color to the Blender material. In the Godot kit preview, the pale horns and fins stand out against the blue scales. |
 | A set seed makes `RandomNumberGenerator` repeatable | https://docs.godotengine.org/en/stable/classes/class_randomnumbergenerator.
 see html | _TODO_            |
 | A `CanvasLayer` draws above the 3D world            | https://docs.godotengine.org/en/stable/classes/class_canvaslayer. 

@@ -45,7 +45,8 @@ ART = Path(__file__).resolve().parent.parent / "art"
 GLB = ART / "dragon_kit.glb"
 BLEND = ART / "dragon_kit.blend"
 
-VOXELS = 4  # voxels per cell edge
+VOXELS = 4  # voxels per cell edge for tiles and props
+DRAGON_VOXELS = 8
 
 MATERIALS = []  # every material, in order; a face's material_index points into this list
 PALETTE = {}  # voxel character -> index in MATERIALS; filled in by make_materials()
@@ -90,12 +91,14 @@ def make_materials():
     """One material per voxel character. Runs after reset_scene(), which would erase them."""
     PALETTE.update({
         "#": pbr_material("Scales", "#4bcbfd", metallic=0.2, roughness=0.45),
+        "b": pbr_material("Belly", "#17476c", roughness=0.7),
+        "i": pbr_material("Ice Fin", "#c4faff", roughness=0.32),
         "*": pbr_material("Gold", "#f2bf3a", metallic=1.0, roughness=0.3),
         "e": pbr_material("Eye", "#ffb22e", emission="#ffa21a", strength=4.0),
         "o": pbr_material("Ember", "#ff6a1a", emission="#ff4a08", strength=3.0),
-        "s": pbr_material("Stone", "#9e9883", roughness=0.85),
-        "t": pbr_material("Moss", "#F00303", roughness=0.9),
-        "w": pbr_material("Brick", "#6b4d3d", roughness=0.9),
+        "s": pbr_material("Slate", "#344969", roughness=0.85),
+        "t": pbr_material("Frost", "#6f9dac", roughness=0.9),
+        "w": pbr_material("Basalt", "#252f51", roughness=0.9),
         "f": pbr_material("Food", "#ff3d7f", roughness=0.4, emission="#ff2a6d", strength=2.0),
     })
 
@@ -106,91 +109,219 @@ def make_materials():
 # https://docs.blender.org/api/current/info_gotchas_meshes.html
 
 
-def voxels(bm, layers, below_ground=0):
+def voxels(bm, layers, below_ground=0, *, resolution=VOXELS):
     """Add one cube per palette character. Each layer is a top-down view of the cell,
     from the ground up: the top row is the front (+Y), the bottom row is the back."""
+    unit = 1 / resolution
     for z, layer in enumerate(layers):
         for row, line in enumerate(layer.split()):
             for column, char in enumerate(line):
                 if char not in PALETTE:
                     continue
                 center = (
-                    (column + 0.5) / VOXELS - 0.5,
-                    0.5 - (row + 0.5) / VOXELS,
-                    (z - below_ground + 0.5) / VOXELS,
+                    (column + 0.5) * unit - 0.5,
+                    0.5 - (row + 0.5) * unit,
+                    (z - below_ground + 0.5) * unit,
                 )
-                cube = bmesh.ops.create_cube(bm, size=1 / VOXELS, matrix=Matrix.Translation(center))
+                cube = bmesh.ops.create_cube(bm, size=unit, matrix=Matrix.Translation(center))
                 for face in {f for v in cube["verts"] for f in v.link_faces}:
                     face.material_index = PALETTE[char]
 
 
+# Each opening reaches the cell edge in the middle four columns or rows
+# and is two voxels high. Keep upper details inside the cell.
 def build_head(bm):
-    voxels(bm, ["""
-        .##.
-        ####
-        ####
-        .##.
+    neck_and_jaw = """
+        ........
+        ..bbbb..
+        ..####..
+        .######.
+        .######.
+        ..####..
+        ..####..
+        ..####..
+    """
+    voxels(bm, [neck_and_jaw] * 2 + ["""
+        ........
+        ..####..
+        .e####e.
+        .######.
+        .######.
+        ..####..
+        ...##...
+        ........
         """, """
-        ....
-        e##e
-        .##.
-        .##.
+        ........
+        ........
+        ..####..
+        .i####i.
+        .i####i.
+        ..####..
+        ........
+        ........
         """, """
-        ....
-        ....
-        *..*
-        ....
-        """])
+        ........
+        ........
+        ........
+        ........
+        .i....i.
+        ...ii...
+        ........
+        ........
+        """, """
+        ........
+        ........
+        ........
+        ........
+        .i....i.
+        ........
+        ........
+        ........
+    """], resolution=DRAGON_VOXELS)
 
 
 def build_straight(bm):
-    voxels(bm, ["""
-        .##.
-        .##.
-        .##.
-        .##.
+    body = """
+        ..####..
+        ..####..
+        .######.
+        .######.
+        .######.
+        .######.
+        ..####..
+        ..####..
+    """
+    voxels(bm, [body] * 2 + ["""
+        ........
+        ...##...
+        ..####..
+        .b####b.
+        ..####..
+        ...##...
+        ........
+        ........
         """, """
-        ....
-        .*..
-        ....
-        .*..
-        """])
+        ........
+        ........
+        ...ii...
+        ...ii...
+        ...ii...
+        ........
+        ........
+        ........
+        """, """
+        ........
+        ........
+        ........
+        ...ii...
+        ........
+        ........
+        ........
+        ........
+    """], resolution=DRAGON_VOXELS)
 
 
 def build_turn(bm):
-    voxels(bm, ["""
-        ....
-        .###
-        .###
-        .##.
-        """])
+    elbow = """
+        ........
+        ........
+        ...#####
+        ..######
+        .#######
+        .#######
+        ..####..
+        ..####..
+    """
+    voxels(bm, [elbow] * 2 + ["""
+        ........
+        ........
+        ....###.
+        ...####.
+        ..#####.
+        ..####..
+        ..###...
+        ........
+        """, """
+        ........
+        ........
+        ........
+        ....ii..
+        ...ii...
+        ...i....
+        ........
+        ........
+        """, """
+        ........
+        ........
+        ........
+        ........
+        ...ii...
+        ........
+        ........
+        ........
+    """], resolution=DRAGON_VOXELS)
 
 
 def build_tail(bm):
-    voxels(bm, ["""
-        .##.
-        .##.
-        ..#.
-        ..o.
-        """])
+    taper = """
+        ..####..
+        ..####..
+        ..####..
+        ...###..
+        ...###..
+        ....##..
+        ....ii..
+        ........
+    """
+    voxels(bm, [taper] * 2 + ["""
+        ........
+        ...##...
+        ...##...
+        ....#...
+        ....i...
+        ....iii.
+        ....ii..
+        ........
+        """, """
+        ........
+        ........
+        ........
+        ........
+        ........
+        .....i..
+        ....ii..
+        ........
+    """], resolution=DRAGON_VOXELS)
 
 
 def build_floor(bm):
     voxels(bm, ["""
-        ssst
-        stss
         ssss
-        tsss
+        stts
+        stts
+        ssss
         """], below_ground=1)
 
 
 def build_wall(bm):
-    voxels(bm, ["""
+    footing = """
         wwww
         wwww
         wwww
         wwww
-        """] * 3)
+    """
+    voxels(bm, [footing, """
+        wssw
+        swws
+        swws
+        wssw
+        """, """
+        t..t
+        .ss.
+        .ss.
+        t..t
+    """])
+
 
 def build_food(bm):
     """A glowing berry."""
